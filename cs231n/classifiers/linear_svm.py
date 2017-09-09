@@ -35,6 +35,8 @@ def svm_loss_naive(W, X, y, reg):
       margin = scores[j] - correct_class_score + 1 # note delta = 1
       if margin > 0:
         loss += margin
+        dW[:, j] += X[i]
+        dW[:, y[i]] -= X[i]
 
   # Right now the loss is a sum over all training examples, but we want it
   # to be an average instead so we divide by num_train.
@@ -52,11 +54,16 @@ def svm_loss_naive(W, X, y, reg):
   # code above to compute the gradient.                                       #
   #############################################################################
 
+  dW /= num_train 
+  dW += 2 * reg * W
 
   return loss, dW
 
 
 def svm_loss_vectorized(W, X, y, reg):
+
+  num_classes = W.shape[1]
+  num_train = X.shape[0]
   """
   Structured SVM loss function, vectorized implementation.
 
@@ -70,11 +77,19 @@ def svm_loss_vectorized(W, X, y, reg):
   # Implement a vectorized version of the structured SVM loss, storing the    #
   # result in loss.                                                           #
   #############################################################################
-  pass
+  # N * C
+  scores = X.dot(W) 
+  # N * 1
+  correct_class_score = scores[range(y.shape[0]), y].reshape((-1, 1))
+  # N * C
+  subtracted_scores = scores - correct_class_score + 1
+  subtracted_scores[range(y.shape[0]), y] = 0
+  loss = np.sum(subtracted_scores[subtracted_scores > 0])
+  loss /= num_train
+  loss += reg * np.sum(W * W)
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
-
 
   #############################################################################
   # TODO:                                                                     #
@@ -85,7 +100,12 @@ def svm_loss_vectorized(W, X, y, reg):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
-  pass
+  # N * C
+  margin = (subtracted_scores > 0).astype(int)
+  margin[range(y.shape[0]), y] = -np.sum(margin, axis = 1)
+  dW = X.T.dot(margin)
+  dW /= num_train 
+  dW += 2 * reg * W
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
