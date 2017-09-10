@@ -72,19 +72,33 @@ def softmax_loss_vectorized(W, X, y, reg):
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
+  # old version
   # N * C
+  # scores = X.dot(W)
+  # sum_exp = np.sum(np.exp(scores), axis = 1)
+  # correct_exp = np.exp(scores)[np.arange(num_train), y]
+  # loss = -np.sum(np.log(correct_exp/exp_sums))
+  # loss /= num_train
+  # loss += reg * np.sum(W * W)
+  # dW = X.T.dot(np.exp(scores)/exp_sums.reshape((-1, 1)))
+  # binary = np.zeros_like(scores)
+  # binary[np.arange(num_train), y] = 1
+  # dW -= X.T.dot(binary)
+  # dW /= num_train 
+  # dW += 2 * reg * W
+
   scores = X.dot(W)
-  exp_sums = np.sum(np.exp(scores), axis = 1)
-  correct_exp = np.exp(scores)[np.arange(num_train), y]
-  loss = -np.sum(np.log(correct_exp/exp_sums))
-  loss /= num_train
-  loss += reg * np.sum(W * W)
-  dW = X.T.dot(np.exp(scores)/exp_sums.reshape((-1, 1)))
-  binary = np.zeros_like(scores)
-  binary[np.arange(num_train), y] = 1
-  dW -= X.T.dot(binary)
-  dW /= num_train 
-  dW += 2 * reg * W
+  exp_scores = np.exp(scores)
+  probs = exp_scores / np.sum(exp_scores, axis = 1, keepdims = True)
+  correct_probs = probs[np.arange(num_train), y]
+  data_loss = np.mean(-np.log(correct_probs))
+  reg_loss = reg * np.sum(W * W)
+  loss = data_loss + reg_loss
+
+  probs[np.arange(num_train), y] -= 1
+  data_grad = np.dot(X.T, probs) / num_train
+  reg_grad = 2 * reg * W
+  dW = data_grad + reg_grad
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
