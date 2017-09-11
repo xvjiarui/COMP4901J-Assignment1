@@ -41,7 +41,7 @@ class TwoLayerNet(object):
     self.params['W2'] = std * np.random.randn(hidden_size, output_size)
     self.params['b2'] = np.zeros(output_size)
 
-  def loss(self, X, y=None, reg=0.0):
+  def loss(self, X, y=None, reg=0.0, dropout=0.0):
     """
     Compute the loss and gradients for a two layer fully connected neural
     network.
@@ -77,8 +77,12 @@ class TwoLayerNet(object):
     # shape (N, C).                                                             #
     #############################################################################
     pass
+    if dropout > 1e-5:
+      X[np.random.rand(X.shape[0], X.shape[1]) < dropout] = 0
     hidden_score = X.dot(W1) + b1
     hidden_score = np.maximum(0, hidden_score)
+    if dropout > 1e-5:
+      hidden_score[np.random.rand(hidden_score.shape[0], hidden_score.shape[1]) < dropout] = 0
     scores = hidden_score.dot(W2) + b2
     #############################################################################
     #                              END OF YOUR CODE                             #
@@ -139,7 +143,7 @@ class TwoLayerNet(object):
   def train(self, X, y, X_val, y_val,
             learning_rate=1e-3, learning_rate_decay=0.95,
             reg=5e-6, num_iters=100,
-            batch_size=200, verbose=False):
+            batch_size=200, dropout=0.0, verbose=False):
     """
     Train this neural network using stochastic gradient descent.
 
@@ -181,7 +185,7 @@ class TwoLayerNet(object):
       #########################################################################
 
       # Compute loss and gradients using the current minibatch
-      loss, grads = self.loss(X_batch, y=y_batch, reg=reg)
+      loss, grads = self.loss(X_batch, y=y_batch, reg=reg, dropout=dropout)
       loss_history.append(loss)
 
       #########################################################################
